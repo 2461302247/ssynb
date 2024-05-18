@@ -8,7 +8,7 @@ class PageReplacement {
         int numFrames = 4;
 
         System.out.println("FIFO Page Replacement Algorithm");
-        int fifoPageFaults = calculatePageFaults("FIFO", pageSequence, numFrames);
+        int fifoPageFaults = calculatePageFaultsFIFO(pageSequence, numFrames);
         double fifoMissRate = calculateMissRate(pageSequence.length, fifoPageFaults);
 
         System.out.println("\nLRU Page Replacement Algorithm");
@@ -22,38 +22,36 @@ class PageReplacement {
         System.out.printf("LRU\t\t%d\t\t%.2f%%\n", lruPageFaults, (lruMissRate * 100));
     }
 
-    private static int calculatePageFaults(String algorithm, int[] pageSequence, int numFrames) {
-        if ("FIFO".equals(algorithm)) {
-            Queue<Integer> pages = new LinkedList<>();
-            int pageFaults = 0;
-            for (int page : pageSequence) {
-                if (!pages.contains(page)) {
-                    if (pages.size() == numFrames) {
-                        pages.poll(); // Remove the oldest page
-                    }
-                    pages.add(page);
-                    pageFaults++;
+    private static int calculatePageFaultsFIFO(int[] pageSequence, int numFrames) {
+        Queue<Integer> pages = new LinkedList<>();
+        int pageFaults = 0;
+        for (int page : pageSequence) {
+            if (!pages.contains(page)) {
+                if (pages.size() == numFrames) {
+                    pages.poll(); // Remove the oldest page
                 }
+                pages.add(page);
+                pageFaults++;
             }
-            return pageFaults;
         }
-        return 0;
+        return pageFaults;
     }
 
     private static int calculatePageFaultsLRU(int[] pageSequence, int numFrames) {
-        Map<Integer, Integer> pages = new LinkedHashMap<>(numFrames, 0.75f, true) {
-            protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {
-                return size() > numFrames;
-            }
-        };
+        Deque<Integer> pages = new LinkedList<>();
         int pageFaults = 0;
 
         for (int page : pageSequence) {
-            if (!pages.containsKey(page)) {
-                pages.put(page, 1); // 使用键值对存储页面，值为访问次数
+            if (!pages.contains(page)) {
+                if (pages.size() == numFrames) {
+                    pages.poll(); // Remove the least recently used (LRU) page
+                }
+                pages.push(page); // Add new page to the front (most recently used)
                 pageFaults++;
             } else {
-                pages.put(page, pages.get(page) + 1); // 更新页面的访问次数
+                // Page is already in the set, move it to the front (most recently used)
+                pages.remove(page);
+                pages.push(page);
             }
         }
         return pageFaults;
